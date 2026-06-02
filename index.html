@@ -1,16 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <title>ASCII Doom</title>
+    <meta charset="UTF-8">
+    <title>Pretext Doom</title>
 </head>
-<body style="margin:0; background:black; overflow:hidden;">
+
+<body style="
+  margin: 0;
+  background: black;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  overflow: hidden;
+">
+
 <div id="app" style="
     font-family: monospace;
     white-space: pre;
     line-height: 1;
     font-size: 10px;
-    color: white;
+    user-select: none;
   "></div>
 
 <script type="module" src="main.js"></script>
