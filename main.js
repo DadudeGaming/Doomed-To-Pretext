@@ -50,7 +50,7 @@ Pretext Flow Demo
 Move mouse to change width
 `;
 
-    const prepared = prepare(text, "18px system-ui");
+    const prepared = prepare(text, "18px Arial");
 
     let mouseX = 400;
     window.onmousemove = e => mouseX = e.clientX;
