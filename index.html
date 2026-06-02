@@ -3,6 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <title>Pretext Hub</title>
+
+    <script type="importmap">
+        {
+          "imports": {
+            "@chenglou/pretext": "https://cdn.jsdelivr.net/npm/@chenglou/pretext/+esm"
+          }
+        }
+    </script>
 </head>
 
 <body style="
@@ -15,32 +23,12 @@
   display:flex;
 ">
 
-<div id="menu" style="
-    width:220px;
-    padding:20px;
-    background:#111;
-    display:flex;
-    flex-direction:column;
-    gap:10px;
-    border-right:1px solid #222;
-  ">
-    <div style="font-size:18px; margin-bottom:10px;">
-        Pretext Hub
-    </div>
-
-    <button data-demo="flow">Living Flow Text</button>
-    <button data-demo="gravity">Gravity Text</button>
-    <button data-demo="editor">Editor</button>
-    <button data-demo="wall">Visual Wall</button>
+<div id="menu" style="width:220px;padding:20px;background:#111;">
+    <button data-demo="flow">Flow</button>
+    <button data-demo="gravity">Gravity</button>
 </div>
 
-<div id="app" style="
-    flex:1;
-    padding:20px;
-    white-space:pre;
-    font-family:monospace;
-    overflow:hidden;
-  "></div>
+<div id="app" style="flex:1;padding:20px;white-space:pre;font-family:monospace;"></div>
 
 <script type="module" src="main.js"></script>
 </body>
