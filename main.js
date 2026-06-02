@@ -4,17 +4,23 @@
 const COLS = 120;
 const ROWS = 40;
 
+const app = document.getElementById("app");
+
 // =====================
-// MAP
+// MAP (2D grid)
+// 1 = red wall
+// 2 = blue wall
+// 3 = green wall
 // =====================
 const map = [
-    "1111111111111111",
-    "1000000000000001",
-    "1011110111111101",
-    "1000000000000001",
-    "1000110000010001",
-    "1000000000000001",
-    "1111111111111111"
+    "111111111111111111",
+    "100000000000000001",
+    "102000000000003001",
+    "100000011000000001",
+    "100000011000000001",
+    "100000000000000001",
+    "100000000000000001",
+    "111111111111111111"
 ];
 
 // =====================
@@ -37,8 +43,12 @@ window.addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
 // =====================
 // COLLISION
 // =====================
+function getCell(x, y) {
+    return map[Math.floor(y)][Math.floor(x)];
+}
+
 function isWall(x, y) {
-    return map[Math.floor(y)][Math.floor(x)] === "1";
+    return getCell(x, y) !== "0";
 }
 
 // =====================
@@ -76,9 +86,12 @@ function castRay(angle) {
         const x = player.x + Math.cos(angle) * d;
         const y = player.y + Math.sin(angle) * d;
 
-        if (isWall(x, y)) return d;
+        const cell = getCell(x, y);
+        if (cell !== "0") {
+            return { dist: d, type: cell };
+        }
     }
-    return 20;
+    return { dist: 20, type: "1" };
 }
 
 // =====================
@@ -94,26 +107,35 @@ function render() {
 
     for (let x = 0; x < COLS; x++) {
         const rayAngle = player.angle + (x / COLS - 0.5) * 1.2;
-        const dist = castRay(rayAngle);
+
+        const hit = castRay(rayAngle);
+        const dist = hit.dist;
 
         const wallHeight = Math.floor(ROWS / (dist + 0.001));
 
+        // shading
         const shade =
             dist < 3 ? "█" :
                 dist < 6 ? "▓" :
                     dist < 10 ? "▒" : "░";
 
-        const color =
-            dist < 3 ? "#ff4444" :
-                dist < 6 ? "#aa3333" :
-                    "#552222";
+        // wall color by type
+        let color =
+            hit.type === "1" ? "#ff4444" :
+                hit.type === "2" ? "#4444ff" :
+                    hit.type === "3" ? "#44ff44" :
+                        "#aaaaaa";
 
         const start = Math.floor((ROWS - wallHeight) / 2);
 
         for (let y = 0; y < wallHeight; y++) {
             const py = start + y;
+
             if (py >= 0 && py < ROWS) {
-                frame[py][x] = { char: shade, color };
+                frame[py][x] = {
+                    char: shade,
+                    color
+                };
             }
         }
     }
@@ -125,16 +147,14 @@ function render() {
 // DRAW
 // =====================
 function draw(frame) {
-    const app = document.getElementById("app");
-
     let out = "";
 
     for (let y = 0; y < ROWS; y++) {
         let line = "";
 
         for (let x = 0; x < COLS; x++) {
-            const cell = frame[y][x];
-            line += `<span style="color:${cell.color}">${cell.char}</span>`;
+            const c = frame[y][x];
+            line += `<span style="color:${c.color}">${c.char}</span>`;
         }
 
         out += line + "\n";
@@ -148,8 +168,7 @@ function draw(frame) {
 // =====================
 function loop() {
     update();
-    const frame = render();
-    draw(frame);
+    draw(render());
     requestAnimationFrame(loop);
 }
 
