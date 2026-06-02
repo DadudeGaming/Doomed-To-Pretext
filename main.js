@@ -7,12 +7,11 @@ import {
 } from "@chenglou/pretext";
 
 const app = document.getElementById("app");
-const buttons = document.querySelectorAll("button");
 
 let raf = null;
 
 // =====================
-// STOP CURRENT DEMO
+// STOP LOOP
 // =====================
 function stop() {
     if (raf) cancelAnimationFrame(raf);
@@ -21,14 +20,14 @@ function stop() {
 }
 
 // =====================
-// DEMO 1 - FLOW
+// DEMOS
 // =====================
 function flow() {
     stop();
 
     const text = `
 Pretext Flow Demo
-Move your mouse to change layout width
+Move mouse to change layout width
 `;
 
     const prepared = prepare(text, "18px system-ui");
@@ -50,15 +49,12 @@ Move your mouse to change layout width
     loop();
 }
 
-// =====================
-// DEMO 2 - GRAVITY
-// =====================
 function gravity() {
     stop();
 
     const text = `
-Text bends based on cursor position.
-Pretext recomputes layout instantly.
+Gravity text demo.
+Layout bends dynamically.
 `;
 
     const prepared = prepareWithSegments(text, "18px monospace");
@@ -91,22 +87,13 @@ Pretext recomputes layout instantly.
     loop();
 }
 
-// =====================
-// DEMO 3 - EDITOR
-// =====================
 function editor() {
     stop();
 
     app.innerHTML = `
-<textarea id="t" style="
-  width:100%;
-  height:120px;
-  font-size:14px;
-">Type here...</textarea>
-
+<textarea id="t" style="width:100%;height:120px;">Type here...</textarea>
 <input id="w" type="range" min="200" max="800" value="400"/>
-
-<pre id="out" style="margin-top:10px;"></pre>
+<pre id="out"></pre>
 `;
 
     const t = document.getElementById("t");
@@ -127,9 +114,6 @@ function editor() {
     update();
 }
 
-// =====================
-// DEMO 4 - WALL
-// =====================
 function wall() {
     stop();
 
@@ -155,7 +139,7 @@ function wall() {
 }
 
 // =====================
-// ROUTER
+// ROUTER (FIXED)
 // =====================
 function switchDemo(name) {
     if (name === "flow") flow();
@@ -164,12 +148,16 @@ function switchDemo(name) {
     if (name === "wall") wall();
 }
 
-// attach listeners properly
-buttons.forEach(btn => {
-    btn.addEventListener("click", () => {
-        switchDemo(btn.dataset.demo);
-    });
-});
+// CRITICAL FIX: wait until DOM exists
+window.addEventListener("DOMContentLoaded", () => {
+    const buttons = document.querySelectorAll("button");
 
-// default
-flow();
+    buttons.forEach(btn => {
+        btn.addEventListener("click", () => {
+            switchDemo(btn.dataset.demo);
+        });
+    });
+
+    // start default demo
+    flow();
+});
