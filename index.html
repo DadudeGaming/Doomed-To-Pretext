@@ -1,29 +1,35 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta charset="UTF-8">
-    <title>Mini Doom</title>
+    <title>Pretext Hub</title>
 </head>
 
 <body style="
-  margin: 0;
-  background: black;
-  overflow: hidden;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
+  margin:0;
+  background:#0b0b0b;
+  color:white;
+  font-family: system-ui;
+  overflow:hidden;
 ">
 
+<div id="ui" style="
+    padding:20px;
+  ">
+    <h2>Pretext Showcase</h2>
+
+    <button onclick="window.switchDemo('flow')">Living Flow Text</button>
+    <button onclick="window.switchDemo('gravity')">Gravity Text</button>
+    <button onclick="window.switchDemo('editor')">Editor</button>
+    <button onclick="window.switchDemo('wall')">Visual Wall</button>
+</div>
+
 <div id="app" style="
-  font-family: monospace;
-  white-space: pre;
-  font-size: 10px;
-  line-height: 10px;
-  color: white;
-"></div>
+    padding:20px;
+    white-space: pre;
+    font-family: monospace;
+  "></div>
 
 <script type="module" src="main.js"></script>
-
 </body>
 </html>

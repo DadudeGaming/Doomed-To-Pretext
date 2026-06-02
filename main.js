@@ -1,175 +1,158 @@
-// =====================
-// CONFIG
-// =====================
-const COLS = 120;
-const ROWS = 40;
+import { prepare, layoutWithLines, prepareWithSegments, layoutNextLineRange, materializeLineRange } from "@chenglou/pretext";
 
 const app = document.getElementById("app");
 
-// =====================
-// MAP (2D grid)
-// 1 = red wall
-// 2 = blue wall
-// 3 = green wall
-// =====================
-const map = [
-    "111111111111111111",
-    "100000000000000001",
-    "102000000000003001",
-    "100000011000000001",
-    "100000011000000001",
-    "100000000000000001",
-    "100000000000000001",
-    "111111111111111111"
-];
+let activeLoop = null;
 
 // =====================
-// PLAYER
+// STOP CURRENT DEMO
 // =====================
-const player = {
-    x: 2.5,
-    y: 2.5,
-    angle: 0
+function stop() {
+    if (activeLoop) cancelAnimationFrame(activeLoop);
+    activeLoop = null;
+    app.innerHTML = "";
+}
+
+// =====================
+// 1. FLOW TEXT
+// =====================
+function flow() {
+    stop();
+
+    const text = `
+Pretext flow demo.
+Move mouse horizontally to change layout width.
+`;
+
+    const prepared = prepare(text, "18px system-ui");
+
+    let mouseX = 400;
+
+    window.onmousemove = (e) => mouseX = e.clientX;
+
+    function loop() {
+        const width = Math.max(200, mouseX);
+
+        const { lines } = layoutWithLines(prepared, width, 24);
+
+        app.innerHTML = lines.map(l => l.text).join("<br>");
+
+        activeLoop = requestAnimationFrame(loop);
+    }
+
+    loop();
+}
+
+// =====================
+// 2. GRAVITY TEXT
+// =====================
+function gravity() {
+    stop();
+
+    const text = `
+Text bends based on cursor position.
+Pretext handles line reflow cheaply.
+`;
+
+    const prepared = prepareWithSegments(text, "18px monospace");
+
+    let mouse = 400;
+
+    window.onmousemove = (e) => mouse = e.clientX;
+
+    function loop() {
+        let cursor = { segmentIndex: 0, graphemeIndex: 0 };
+
+        let out = "";
+
+        while (true) {
+            const width = Math.max(200, 600 - Math.abs(mouse - 400));
+
+            const range = layoutNextLineRange(prepared, cursor, width);
+            if (!range) break;
+
+            const line = materializeLineRange(prepared, range);
+
+            out += line.text + "\n";
+
+            cursor = range.end;
+        }
+
+        app.textContent = out;
+
+        activeLoop = requestAnimationFrame(loop);
+    }
+
+    loop();
+}
+
+// =====================
+// 3. EDITOR
+// =====================
+function editor() {
+    stop();
+
+    app.innerHTML = `
+<textarea id="t" style="width:100%;height:120px;">Type here...</textarea>
+<input id="w" type="range" min="200" max="800" value="400"/>
+<pre id="out"></pre>
+`;
+
+    const t = document.getElementById("t");
+    const w = document.getElementById("w");
+    const out = document.getElementById("out");
+
+    function update() {
+        const prepared = prepareWithSegments(t.value, "16px monospace");
+
+        const { lines } = layoutWithLines(prepared, Number(w.value), 20);
+
+        out.textContent = lines.map(l => l.text).join("\n");
+    }
+
+    t.oninput = update;
+    w.oninput = update;
+
+    update();
+}
+
+// =====================
+// 4. WALL VISUAL
+// =====================
+function wall() {
+    stop();
+
+    function loop() {
+        let out = "";
+
+        for (let y = 0; y < 30; y++) {
+            let line = "";
+
+            for (let x = 0; x < 80; x++) {
+                const v = Math.sin((x + Date.now() * 0.003)) > 0 ? "█" : "░";
+                line += v;
+            }
+
+            out += line + "\n";
+        }
+
+        app.textContent = out;
+
+        activeLoop = requestAnimationFrame(loop);
+    }
+
+    loop();
+}
+
+// =====================
+// ROUTER
+// =====================
+window.switchDemo = function(name) {
+    if (name === "flow") flow();
+    if (name === "gravity") gravity();
+    if (name === "editor") editor();
+    if (name === "wall") wall();
 };
 
-// =====================
-// INPUT
-// =====================
-const keys = {};
-
-window.addEventListener("keydown", e => keys[e.key.toLowerCase()] = true);
-window.addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
-
-// =====================
-// COLLISION
-// =====================
-function getCell(x, y) {
-    return map[Math.floor(y)][Math.floor(x)];
-}
-
-function isWall(x, y) {
-    return getCell(x, y) !== "0";
-}
-
-// =====================
-// MOVEMENT
-// =====================
-function update() {
-    const moveSpeed = 0.05;
-    const rotSpeed = 0.04;
-
-    if (keys["arrowleft"]) player.angle -= rotSpeed;
-    if (keys["arrowright"]) player.angle += rotSpeed;
-
-    let nx = player.x;
-    let ny = player.y;
-
-    if (keys["w"]) {
-        nx += Math.cos(player.angle) * moveSpeed;
-        ny += Math.sin(player.angle) * moveSpeed;
-    }
-
-    if (keys["s"]) {
-        nx -= Math.cos(player.angle) * moveSpeed;
-        ny -= Math.sin(player.angle) * moveSpeed;
-    }
-
-    if (!isWall(nx, player.y)) player.x = nx;
-    if (!isWall(player.x, ny)) player.y = ny;
-}
-
-// =====================
-// RAYCAST
-// =====================
-function castRay(angle) {
-    for (let d = 0; d < 20; d += 0.05) {
-        const x = player.x + Math.cos(angle) * d;
-        const y = player.y + Math.sin(angle) * d;
-
-        const cell = getCell(x, y);
-        if (cell !== "0") {
-            return { dist: d, type: cell };
-        }
-    }
-    return { dist: 20, type: "1" };
-}
-
-// =====================
-// FRAME
-// =====================
-function render() {
-    const frame = Array.from({ length: ROWS }, () =>
-        Array.from({ length: COLS }, () => ({
-            char: " ",
-            color: "#000"
-        }))
-    );
-
-    for (let x = 0; x < COLS; x++) {
-        const rayAngle = player.angle + (x / COLS - 0.5) * 1.2;
-
-        const hit = castRay(rayAngle);
-        const dist = hit.dist;
-
-        const wallHeight = Math.floor(ROWS / (dist + 0.001));
-
-        // shading
-        const shade =
-            dist < 3 ? "█" :
-                dist < 6 ? "▓" :
-                    dist < 10 ? "▒" : "░";
-
-        // wall color by type
-        let color =
-            hit.type === "1" ? "#ff4444" :
-                hit.type === "2" ? "#4444ff" :
-                    hit.type === "3" ? "#44ff44" :
-                        "#aaaaaa";
-
-        const start = Math.floor((ROWS - wallHeight) / 2);
-
-        for (let y = 0; y < wallHeight; y++) {
-            const py = start + y;
-
-            if (py >= 0 && py < ROWS) {
-                frame[py][x] = {
-                    char: shade,
-                    color
-                };
-            }
-        }
-    }
-
-    return frame;
-}
-
-// =====================
-// DRAW
-// =====================
-function draw(frame) {
-    let out = "";
-
-    for (let y = 0; y < ROWS; y++) {
-        let line = "";
-
-        for (let x = 0; x < COLS; x++) {
-            const c = frame[y][x];
-            line += `<span style="color:${c.color}">${c.char}</span>`;
-        }
-
-        out += line + "\n";
-    }
-
-    app.innerHTML = out;
-}
-
-// =====================
-// LOOP
-// =====================
-function loop() {
-    update();
-    draw(render());
-    requestAnimationFrame(loop);
-}
-
-loop();
+// default
+flow();
