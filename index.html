@@ -1,55 +1,36 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
-    <title>Pretext Hub</title>
+    <meta charset="UTF-8" />
+    <title>Mini FPS</title>
 
     <script type="importmap">
         {
           "imports": {
-            "@chenglou/pretext": "https://cdn.jsdelivr.net/npm/@chenglou/pretext/+esm"
+            "@chenglou/pretext": "https://esm.sh/@chenglou/pretext"
           }
         }
     </script>
+
+    <style>
+        body {
+            margin: 0;
+            background: #000;
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+            margin: auto;
+            width: 85vw;
+            height: 85vh;
+            image-rendering: pixelated;
+        }
+    </style>
 </head>
 
-<body style="
-  margin:0;
-  background:#0b0b0b;
-  color:white;
-  font-family: system-ui;
-  height:100vh;
-  overflow:hidden;
-  display:flex;
-">
-
-<div id="menu" style="
-    width:220px;
-    padding:20px;
-    background:#111;
-    display:flex;
-    flex-direction:column;
-    gap:10px;
-    border-right:1px solid #222;
-  ">
-    <div style="font-size:18px; margin-bottom:10px;">
-        Pretext Hub
-    </div>
-
-    <button data-demo="flow">Flow</button>
-    <button data-demo="gravity">Gravity</button>
-    <button data-demo="editor">Editor</button>
-    <button data-demo="wall">Wall</button>
-    <button data-demo="doom">Mini Doom</button>
-</div>
-
-<div id="app" style="
-    flex:1;
-    padding:20px;
-    white-space:pre;
-    font-family:monospace;
-    overflow:hidden;
-  "></div>
+<body>
+<canvas id="game"></canvas>
 
 <script type="module" src="main.js"></script>
 </body>
