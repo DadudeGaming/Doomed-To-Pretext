@@ -93,7 +93,7 @@ document.addEventListener("mousemove", e => {
     player.a += e.movementX * 0.0022;
 });
 
-//  Enemies
+// Enemies
 let enemies = [];
 const spawnPoints = [
     { x: 10, y: 3,  cooldown: 0 },
@@ -246,16 +246,36 @@ function hash2(a, b) {
 }
 
 // Wall renderer
-let lastCellId = "";
-let segmentStartRayIndex = 0;
+let currentWallSegment = null;
 
 function drawWallColumn(rayIndex, hit, w, h, rays) {
-    if (hit.cell === "0") return;
+    const isNewSegment = (
+        rayIndex === 0 ||
+        hit.cell === "0" ||
+        (currentWallSegment && hit.hitSide !== currentWallSegment.initialHitSide) ||
+        (currentWallSegment && hit.cell !== currentWallSegment.lastHitCell && hit.cell !== "0")
+    );
 
-    const currentCellId = `${hit.mx},${hit.my},${hit.hitSide}`;
-    if (rayIndex === 0 || currentCellId !== lastCellId) {
-        segmentStartRayIndex = rayIndex;
-        lastCellId = currentCellId;
+    if (isNewSegment) {
+        currentWallSegment = null;
+    }
+
+    if (hit.cell !== "0" && !currentWallSegment) {
+        currentWallSegment = {
+            startRayIndex: rayIndex,
+            startMx: hit.mx,
+            startMy: hit.my,
+            initialCellType: hit.cell,
+            initialHitSide: hit.hitSide,
+            lastHitCell: hit.cell
+        };
+    } else if (currentWallSegment && hit.cell !== "0") {
+        currentWallSegment.lastHitCell = hit.cell;
+    }
+
+
+    if (hit.cell === "0" || !currentWallSegment) {
+        return;
     }
 
     const viewAngle = player.a - (player.a + (rayIndex / rays - 0.5) * 1.2);
@@ -263,7 +283,6 @@ function drawWallColumn(rayIndex, hit, w, h, rays) {
     const dist = Math.max(correctedDist, 0.1);
 
     const wallHeight = h / dist;
-    const screenX = (rayIndex / rays) * w;
     const top = h / 2 - wallHeight / 2;
     const bottom = h / 2 + wallHeight / 2;
 
@@ -281,28 +300,37 @@ function drawWallColumn(rayIndex, hit, w, h, rays) {
     ctx.textBaseline = "middle";
     ctx.fillStyle = `rgb(${r},${g},${b})`;
 
-    const sentences = wallSentences[hit.cell] || wallSentences["1"];
+    const sentences = wallSentences[currentWallSegment.initialCellType] || wallSentences["1"];
     const rowStepHeight = Math.max(8, fontSize + 1);
 
-    const charWidthPixels = fontSize * 0.62;
-    const totalScreenPixelsFromWallStart = (rayIndex - segmentStartRayIndex) * (w / rays);
-    const textColumnIndex = Math.floor(totalScreenPixelsFromWallStart / charWidthPixels);
+    const charWidthPixels = ctx.measureText("M").width;
+    const rayColumnWidth = w / rays;
+    const raysPerCharacter = Math.max(1, Math.round(charWidthPixels / rayColumnWidth));
+
+    if ((rayIndex - currentWallSegment.startRayIndex) % raysPerCharacter !== 0) {
+        return;
+    }
+
+    const charScreenX = ((rayIndex + raysPerCharacter / 2) / rays) * w;
 
     const startRowIdx = Math.floor((-wallHeight / 2) / rowStepHeight);
     const endRowIdx   = Math.ceil((wallHeight / 2) / rowStepHeight);
+
+    const charIndexInSegment = Math.floor((rayIndex - currentWallSegment.startRayIndex) / raysPerCharacter);
 
     for (let rowNum = startRowIdx; rowNum <= endRowIdx; rowNum++) {
         const y = h / 2 + rowNum * rowStepHeight;
         if (y < top || y > bottom) continue;
 
-        const tileSeed = hash2(hit.mx, hit.my);
+        const tileSeed = hash2(currentWallSegment.startMx, currentWallSegment.startMy);
         const sentenceIndex = Math.abs(tileSeed + rowNum) % sentences.length;
         const currentSentence = sentences[sentenceIndex];
 
-        const finalCharIdx = ((textColumnIndex % currentSentence.length) + currentSentence.length) % currentSentence.length;
-        const character = currentSentence[finalCharIdx];
+        const character = currentSentence[charIndexInSegment % currentSentence.length];
 
-        ctx.fillText(character, screenX, y);
+        if (character) {
+            ctx.fillText(character, charScreenX, y);
+        }
     }
 }
 
@@ -385,7 +413,7 @@ function loop() {
         const zBuffer = new Float32Array(rays);
         const fov = 1.2;
 
-        lastCellId = "";
+        currentWallSegment = null; // Reset for each frame
 
         for (let i = 0; i < rays; i++) {
             const angle = player.a + (i / rays - 0.5) * fov;
